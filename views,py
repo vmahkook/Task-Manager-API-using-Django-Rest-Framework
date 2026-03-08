@@ -1,0 +1,32 @@
+from rest_framework import generics, filters
+from django_filters.rest_framework import DjangoFilterBackend
+
+from .models import Task
+from .serializers import TaskSerializer
+
+
+class TaskListCreateView(generics.ListCreateAPIView):
+    """GET /api/tasks/  →  list   |  POST /api/tasks/  →  create"""
+    serializer_class = TaskSerializer
+    filter_backends  = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['status', 'priority', 'completed']
+    search_fields    = ['title', 'description']
+    ordering_fields  = ['created_at', 'priority']
+
+    def get_queryset(self):
+        # Each user sees only their own tasks
+        return Task.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class TaskDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """GET / PATCH / DELETE /api/tasks/<pk>/"""
+    serializer_class = TaskSerializer
+
+    def get_queryset(self):
+        return Task.objects.filter(user=self.request.user)
+
+
+    
